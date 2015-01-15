@@ -423,7 +423,7 @@ MTK_BT_30_HS_SUPPORT=no
 MTK_BT_30_SUPPORT=yes
 
 # This feature option means to enable/disable BLE standlone. In Standlone mode, BR/EDR will be disabled.
-MTK_BT_40_LE_STANDALONE=no
+MTK_BT_40_LE_STANDALONE=yes
 
 # When this option set to yes, the Bluetooth stack will comply to Bluetooth Sepc 4.0 (Low Energy).
 MTK_BT_40_SUPPORT=yes
