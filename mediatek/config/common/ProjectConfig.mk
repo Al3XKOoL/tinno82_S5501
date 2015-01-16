@@ -50,7 +50,7 @@ MTK_WEEK_NO =
 # for build verno customization
 CUSTOM_BUILD_VERNO =
 
-MTK_BT_40_LE_STANDALONE = yes
+MTK_BT_40_LE_STANDALONE = no
 
 # for CTA test
 MTK_CTA_SUPPORT = no
