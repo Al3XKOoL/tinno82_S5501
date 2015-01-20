@@ -1,6 +1,6 @@
 VERSION = 3
 PATCHLEVEL = 4
-SUBLEVEL = 93
+SUBLEVEL = 94
 EXTRAVERSION =
 NAME = Saber-toothed Squirrel
 
@@ -195,7 +195,7 @@ export KBUILD_BUILDHOST := $(SUBARCH)
 #ARCH		?= $(SUBARCH)
 #CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
 ARCH		?= arm
-CROSS_COMPILE	?= /media/kool/rainbow1/test-tinno82_s5501/toolchain/arm-cortex_a7-linux-gnueabi/bin/arm-cortex_a7-linux-gnueabi-
+CROSS_COMPILE	?= arm-eabi-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
