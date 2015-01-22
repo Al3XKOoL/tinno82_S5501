@@ -349,9 +349,8 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-OPTFLAGS = -mcpu=cortex-a7 -mfpu=neon \
-		   -ffast-math -fsingle-precision-constant \
-		   -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr
+OPTFLAGS = -mcpu=cortex-a7 -mfpu=neon -ftree-vectorize
+
 CFLAGS_MODULE   = -fno-pic -fgcse-las $(OPTFLAGS)
 AFLAGS_MODULE   = $(OPTFLAGS)
 LDFLAGS_MODULE  =
