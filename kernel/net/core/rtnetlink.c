@@ -64,22 +64,13 @@ static DEFINE_MUTEX(rtnl_mutex);
 
 void rtnl_lock(void)
 {
-	#ifdef CONFIG_MTK_NET_LOGGING  
-	printk(KERN_DEBUG "[mtk_net][rtnl_lock]rtnl_lock++\n");
-	#endif
 	mutex_lock(&rtnl_mutex);
-	#ifdef CONFIG_MTK_NET_LOGGING  
-	printk(KERN_DEBUG "[mtk_net][rtnl_lock]rtnl_lock--\n");
-	#endif
 }
 EXPORT_SYMBOL(rtnl_lock);
 
 void __rtnl_unlock(void)
 {
 	mutex_unlock(&rtnl_mutex);
-	#ifdef CONFIG_MTK_NET_LOGGING  
-	printk(KERN_DEBUG "[mtk_net][rtnl_lock]rtnl_unlock done\n");
-	#endif
 }
 
 void rtnl_unlock(void)
