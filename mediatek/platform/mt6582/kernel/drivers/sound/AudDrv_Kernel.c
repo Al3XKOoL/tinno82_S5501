@@ -1,18 +1,16 @@
 /*
- * Copyright (C) 2007 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (C) 2011-2014 MediaTek Inc.
+*
+* This program is free software: you can redistribute it and/or modify it under the terms of the
+* GNU General Public License version 2 as published by the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+* See the GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along with this program.
+* If not, see <http://www.gnu.org/licenses/>.
+*/
 /*******************************************************************************
  *
  * Filename:
@@ -99,6 +97,7 @@
 
 #include <mach/mt_gpio.h>
 #include <mach/mt_typedefs.h>
+#include <linux/time.h>
 
 
 
@@ -423,7 +422,7 @@ static int AudDrv_Read_Procmem(char *buf, char **start, off_t offset, int count 
     len += sprintf(buf + len , "AFE_DL1_BASE  = 0x%x\n", Afe_Get_Reg(AFE_DL1_BASE));
     len += sprintf(buf + len , "AFE_DL1_CUR  = 0x%x\n", Afe_Get_Reg(AFE_DL1_CUR));
     len += sprintf(buf + len , "AFE_DL1_END  = 0x%x\n", Afe_Get_Reg(AFE_DL1_END));
-    len += sprintf(buf + len , "AFE_I2S_CON3  = 0x%x\n", Afe_Get_Reg(AFE_I2S_CON3)); // 
+    len += sprintf(buf + len , "AFE_I2S_CON3  = 0x%x\n", Afe_Get_Reg(AFE_I2S_CON3)); //
     len += sprintf(buf + len , "AFE_DL2_BASE  = 0x%x\n", Afe_Get_Reg(AFE_DL2_BASE));
     len += sprintf(buf + len , "AFE_DL2_CUR  = 0x%x\n", Afe_Get_Reg(AFE_DL2_CUR));
     len += sprintf(buf + len , "AFE_DL2_END  = 0x%x\n", Afe_Get_Reg(AFE_DL2_END));
@@ -606,13 +605,13 @@ static int AudDrv_Read_Procmem(char *buf, char **start, off_t offset, int count 
     PRINTK_AUDDRV("AudDrv_Read_Procmem len = %d count = %d\n", len,count);
 
     AudDrv_Clk_Off();
-    
+
     if (len > 4096)
     {
         xlog_printk(ANDROID_LOG_ERROR, "Sound", "Audio Dump FTrace, AudDrv_Read_Procmem len=%d count=%d . len > 4096", len);
         aee_kernel_exception_api(__FILE__, __LINE__, DB_OPT_FTRACE, "AudDrv_Read_Procmem OverFlow", "AudDrv_Read_Procmem OverFlow");
-    }   
-    
+    }
+
     PRINTK_AUDDRV("-AudDrv_Read_Procmem \n");
     return len;
 }
@@ -623,7 +622,7 @@ void Auddrv_Handle_Mem_context(AFE_MEM_CONTROL_T *Mem_Block)
     kal_int32 Hw_Get_bytes = 0;
     AFE_BLOCK_T  *mBlock = NULL;
     unsigned long flags;
-    
+
     if (Mem_Block == NULL || AudDrvSuspendStatus == true)
     {
         PRINTK_AUDDRV("[Auddrv] Mem_Block ==[NULL] || AudDrvSuspendStatus = [%d]\n", AudDrvSuspendStatus);
@@ -635,7 +634,7 @@ void Auddrv_Handle_Mem_context(AFE_MEM_CONTROL_T *Mem_Block)
         case MEM_VUL:
             HW_Cur_ReadIdx = Afe_Get_Reg(AFE_VUL_CUR);
             break;
-#if 0//            
+#if 0//
         case MEM_DAI:
             HW_Cur_ReadIdx = Afe_Get_Reg(AFE_DAI_CUR);
             break;
@@ -660,6 +659,13 @@ void Auddrv_Handle_Mem_context(AFE_MEM_CONTROL_T *Mem_Block)
         return;
     }
 
+    if (HW_Cur_ReadIdx < mBlock->pucPhysBufAddr || (HW_Cur_ReadIdx >= mBlock->u4BufferSize+ mBlock->pucPhysBufAddr))
+    {
+        //HW_Cur_ReadIdx = mBlock->pucPhysBufAddr;
+        PRINTK_AUDDRV("AudDrv: UL HW_Cur_ReadIdx Invalid 0x%x (>=0x%x,< 0x%x)",HW_Cur_ReadIdx,mBlock->pucPhysBufAddr,mBlock->u4BufferSize+ mBlock->pucPhysBufAddr);
+        return;
+    }
+
     // HW already fill in
     Hw_Get_bytes = (HW_Cur_ReadIdx - mBlock->pucPhysBufAddr) - mBlock->u4WriteIdx;
     if (Hw_Get_bytes < 0)
@@ -672,7 +678,7 @@ void Auddrv_Handle_Mem_context(AFE_MEM_CONTROL_T *Mem_Block)
       Hw_Get_bytes,HW_Cur_ReadIdx,mBlock->u4DMAReadIdx,mBlock->u4WriteIdx,mBlock->pucPhysBufAddr,Mem_Block->MemIfNum);*/
 
     spin_lock_irqsave(&auddrv_ULInCtl_lock, flags);
-    
+
     mBlock->u4WriteIdx  += Hw_Get_bytes;
     mBlock->u4WriteIdx  %= mBlock->u4BufferSize;
     mBlock->u4DataRemained += Hw_Get_bytes;
@@ -683,7 +689,7 @@ void Auddrv_Handle_Mem_context(AFE_MEM_CONTROL_T *Mem_Block)
         PRINTK_AUDDRV("AudDrv=>+UL_Handling overflow ");
         PRINTK_AUDDRV("AudDrv=>DataRemained:0x%x R:0x%x W:0x%x BufSize:0x%x Hw_Get_bytes:0x%x ",mBlock->u4DataRemained,mBlock->u4DMAReadIdx,mBlock->u4WriteIdx,mBlock->u4BufferSize,Hw_Get_bytes);
         PRINTK_AUDDRV("AudDrv=>HW_Cur_ReadIdx:0x%x pucPhysBufAddr:0x%x",HW_Cur_ReadIdx,mBlock->pucPhysBufAddr);
-        
+
         mBlock->u4DataRemained = mBlock->u4BufferSize / 2;
         mBlock->u4DMAReadIdx = mBlock->u4WriteIdx - mBlock->u4BufferSize / 2;
         if (mBlock->u4DMAReadIdx < 0)
@@ -692,7 +698,7 @@ void Auddrv_Handle_Mem_context(AFE_MEM_CONTROL_T *Mem_Block)
         }
     }
     spin_unlock_irqrestore(&auddrv_ULInCtl_lock, flags);
-    
+
     switch (Mem_Block->MemIfNum)
     {
         case MEM_VUL:
@@ -745,7 +751,7 @@ void Auddrv_UL_Interrupt_Handler(void)  // irq2 ISR handler
         Mem_Block = &VUL_Control_context;
         Auddrv_Handle_Mem_context(Mem_Block);
     }
-#if 0 //  don't support DAI        
+#if 0 //  don't support DAI
     if (Afe_Dac_Con0 & 0x10)
     {
         //handle DAI Context
@@ -785,13 +791,13 @@ void Auddrv_UL_Interrupt_Handler(void)  // irq2 ISR handler
  */
 void Auddrv_DL_Interrupt_Handler(void)  // irq1 ISR handler
 {
-    unsigned long flags = 0;
+    unsigned long flags1,flags2;
     kal_int32 Afe_consumed_bytes = 0;
     kal_int32 HW_memory_index = 0;
     kal_int32 HW_Cur_ReadIdx = 0;
     AFE_BLOCK_T *Afe_Block = &(AFE_dL1_Control_context.rBlock);
     //spin lock with interrupt disable
-    spin_lock_irqsave(&auddrv_irqstatus_lock, flags);
+    spin_lock_irqsave(&auddrv_irqstatus_lock, flags1);
 
     if (AudDrvSuspendStatus == true)
     {
@@ -802,11 +808,13 @@ void Auddrv_DL_Interrupt_Handler(void)  // irq1 ISR handler
         HW_Cur_ReadIdx = Afe_Get_Reg(AFE_DL1_CUR);
     }
 
-    if (HW_Cur_ReadIdx == 0)
+    if (HW_Cur_ReadIdx == 0|| HW_Cur_ReadIdx < Afe_Block->pucPhysBufAddr || (HW_Cur_ReadIdx >= Afe_Block->u4BufferSize+ Afe_Block->pucPhysBufAddr))
     {
         PRINTK_AUDDRV("[Auddrv] HW_Cur_ReadIdx ==[%d] AudDrvSuspendStatus = [%d]\n", HW_Cur_ReadIdx, AudDrvSuspendStatus);
         HW_Cur_ReadIdx = Afe_Block->pucPhysBufAddr;
+        AudIrqReset = true;
     }
+
     HW_memory_index = (HW_Cur_ReadIdx - Afe_Block->pucPhysBufAddr);
     /*
     PRINTK_AUDDRV("[Auddrv] HW_Cur_ReadIdx=0x%x HW_memory_index = 0x%x Afe_Block->pucPhysBufAddr = 0x%x\n",
@@ -830,8 +838,8 @@ void Auddrv_DL_Interrupt_Handler(void)  // irq1 ISR handler
     PRINTK_AUDDRV("+Auddrv_DL_Interrupt_Handler ReadIdx:%x WriteIdx:%x, DataRemained:%x, Afe_consumed_bytes:%x HW_memory_index = %x \n",
         Afe_Block->u4DMAReadIdx,Afe_Block->u4WriteIdx,Afe_Block->u4DataRemained,Afe_consumed_bytes,HW_memory_index);
         */
-    spin_lock_irqsave(&auddrv_DLCtl_lock, flags);// Add for ISR data concurrency
-    
+    spin_lock_irqsave(&auddrv_DLCtl_lock, flags2);// Add for ISR data concurrency
+
     if (Afe_Block->u4DataRemained < Afe_consumed_bytes || Afe_Block->u4DataRemained <= 0 || Afe_Block->u4DataRemained  > Afe_Block->u4BufferSize || AudIrqReset)
     {
         // buffer underflow --> clear  whole buffer
@@ -857,11 +865,11 @@ void Auddrv_DL_Interrupt_Handler(void)  // irq1 ISR handler
         PRINTK_AUDDRV("-DL_Handling normal ReadIdx:%x ,DataRemained:%x, WriteIdx:%x \n",
             Afe_Block->u4DMAReadIdx,Afe_Block->u4DataRemained,Afe_Block->u4WriteIdx);*/
     }
-    spin_unlock_irqrestore(&auddrv_DLCtl_lock, flags);
+    spin_unlock_irqrestore(&auddrv_DLCtl_lock, flags2);
     // wait up write thread
     DL1_wait_queue_flag = 1;
     wake_up_interruptible(&DL1_Wait_Queue);
-    spin_unlock_irqrestore(&auddrv_irqstatus_lock, flags);
+    spin_unlock_irqrestore(&auddrv_irqstatus_lock, flags1);
 
 }
 
@@ -943,9 +951,10 @@ static irqreturn_t AudDrv_IRQ_handler(int irq, void *dev_id)
         PRINTK_AUDDRV("IRQ Handle Exception");
         goto AudDrv_IRQ_handler_exit;
     }
-    CheckInterruptTiming();
+
     if (u4RegValue & INTERRUPT_IRQ1_MCU)
     {
+        CheckInterruptTiming();
         Auddrv_DL_Interrupt_Handler();
     }
     if (u4RegValue & INTERRUPT_IRQ2_MCU)
@@ -997,7 +1006,7 @@ static int AudDrv_probe(struct platform_device *dev)
     memset((void *)&AFE_dL2_Control_context, 0, sizeof(AFE_MEM_CONTROL_T));
     memset((void *)&AWB_Control_context, 0, sizeof(AFE_MEM_CONTROL_T));
     memset((void *)&VUL_Control_context, 0, sizeof(AFE_MEM_CONTROL_T));
-#if 0 //  don't support DAI 
+#if 0 //  don't support DAI
     memset((void *)&DAI_Control_context, 0, sizeof(AFE_MEM_CONTROL_T));
 #endif
     memset((void *)&MODDAI_Control_context, 0, sizeof(AFE_MEM_CONTROL_T));
@@ -1007,7 +1016,7 @@ static int AudDrv_probe(struct platform_device *dev)
     AFE_dL2_Control_context.MemIfNum = MEM_DL2 ;
     AWB_Control_context.MemIfNum = MEM_AWB ;
     VUL_Control_context.MemIfNum = MEM_VUL ;
-#if 0 //  don't support DAI 
+#if 0 //  don't support DAI
     DAI_Control_context.MemIfNum = MEM_DAI ;
 #endif
     MODDAI_Control_context.MemIfNum = MEM_MOD_DAI ;
@@ -1134,7 +1143,7 @@ static void AudDrv_Store_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
     pBackup_reg->Suspend_AFE_DAC_CON0 =              Afe_Get_Reg(AFE_DAC_CON0);
     pBackup_reg->Suspend_AFE_DAC_CON1 =              Afe_Get_Reg(AFE_DAC_CON1);
     pBackup_reg->Suspend_AFE_I2S_CON =               Afe_Get_Reg(AFE_I2S_CON);
-    //pBackup_reg->Suspend_AFE_DAIBT_CON0=            Afe_Get_Reg(AFE_DAIBT_CON0); 
+    //pBackup_reg->Suspend_AFE_DAIBT_CON0=            Afe_Get_Reg(AFE_DAIBT_CON0);
 
     pBackup_reg->Suspend_AFE_CONN0 =                 Afe_Get_Reg(AFE_CONN0);
     pBackup_reg->Suspend_AFE_CONN1 =                 Afe_Get_Reg(AFE_CONN1);
@@ -1144,7 +1153,7 @@ static void AudDrv_Store_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
 
     pBackup_reg->Suspend_AFE_I2S_CON1 =              Afe_Get_Reg(AFE_I2S_CON1);
     pBackup_reg->Suspend_AFE_I2S_CON2 =              Afe_Get_Reg(AFE_I2S_CON2);
-    //  pBackup_reg->Suspend_AFE_MRGIF_CON=             Afe_Get_Reg(AFE_MRGIF_CON); 
+    //  pBackup_reg->Suspend_AFE_MRGIF_CON=             Afe_Get_Reg(AFE_MRGIF_CON);
 
     pBackup_reg->Suspend_AFE_DL1_BASE =              Afe_Get_Reg(AFE_DL1_BASE);
     pBackup_reg->Suspend_AFE_DL1_CUR =               Afe_Get_Reg(AFE_DL1_CUR);
@@ -1158,25 +1167,25 @@ static void AudDrv_Store_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
     pBackup_reg->Suspend_AFE_VUL_BASE =              Afe_Get_Reg(AFE_VUL_BASE);
     pBackup_reg->Suspend_AFE_VUL_CUR =               Afe_Get_Reg(AFE_VUL_CUR);
     pBackup_reg->Suspend_AFE_VUL_END =               Afe_Get_Reg(AFE_VUL_END);
-    //pBackup_reg->Suspend_AFE_DAI_BASE=              Afe_Get_Reg(AFE_DAI_BASE); 
-    //pBackup_reg->Suspend_AFE_DAI_CUR=               Afe_Get_Reg(AFE_DAI_CUR); 
-    //pBackup_reg->Suspend_AFE_DAI_END=               Afe_Get_Reg(AFE_DAI_END); 
+    //pBackup_reg->Suspend_AFE_DAI_BASE=              Afe_Get_Reg(AFE_DAI_BASE);
+    //pBackup_reg->Suspend_AFE_DAI_CUR=               Afe_Get_Reg(AFE_DAI_CUR);
+    //pBackup_reg->Suspend_AFE_DAI_END=               Afe_Get_Reg(AFE_DAI_END);
 
-    //pBackup_reg->Suspend_AFE_IRQ_CON=               Afe_Get_Reg(AFE_IRQ_CON); 
+    //pBackup_reg->Suspend_AFE_IRQ_CON=               Afe_Get_Reg(AFE_IRQ_CON);
     pBackup_reg->Suspend_AFE_MEMIF_MON0 =            Afe_Get_Reg(AFE_MEMIF_MON0);
     pBackup_reg->Suspend_AFE_MEMIF_MON1 =            Afe_Get_Reg(AFE_MEMIF_MON1);
     pBackup_reg->Suspend_AFE_MEMIF_MON2 =            Afe_Get_Reg(AFE_MEMIF_MON2);
-    //pBackup_reg->Suspend_AFE_MEMIF_MON3=            Afe_Get_Reg(AFE_MEMIF_MON3); 
+    //pBackup_reg->Suspend_AFE_MEMIF_MON3=            Afe_Get_Reg(AFE_MEMIF_MON3);
     pBackup_reg->Suspend_AFE_MEMIF_MON4 =            Afe_Get_Reg(AFE_MEMIF_MON4);
 
-    //pBackup_reg->Suspend_AFE_FOC_CON=               Afe_Get_Reg(AFE_FOC_CON); 
-    //pBackup_reg->Suspend_AFE_FOC_CON1=              Afe_Get_Reg(AFE_FOC_CON1); 
-    //pBackup_reg->Suspend_AFE_FOC_CON2=              Afe_Get_Reg(AFE_FOC_CON2); 
-    //pBackup_reg->Suspend_AFE_FOC_CON3=              Afe_Get_Reg(AFE_FOC_CON3); 
-    //pBackup_reg->Suspend_AFE_FOC_CON4=              Afe_Get_Reg(AFE_FOC_CON4); 
-    //pBackup_reg->Suspend_AFE_FOC_CON5=              Afe_Get_Reg(AFE_FOC_CON5); 
+    //pBackup_reg->Suspend_AFE_FOC_CON=               Afe_Get_Reg(AFE_FOC_CON);
+    //pBackup_reg->Suspend_AFE_FOC_CON1=              Afe_Get_Reg(AFE_FOC_CON1);
+    //pBackup_reg->Suspend_AFE_FOC_CON2=              Afe_Get_Reg(AFE_FOC_CON2);
+    //pBackup_reg->Suspend_AFE_FOC_CON3=              Afe_Get_Reg(AFE_FOC_CON3);
+    //pBackup_reg->Suspend_AFE_FOC_CON4=              Afe_Get_Reg(AFE_FOC_CON4);
+    //pBackup_reg->Suspend_AFE_FOC_CON5=              Afe_Get_Reg(AFE_FOC_CON5);
 
-    //pBackup_reg->Suspend_AFE_MON_STEP=              Afe_Get_Reg(AFE_MON_STEP); 
+    //pBackup_reg->Suspend_AFE_MON_STEP=              Afe_Get_Reg(AFE_MON_STEP);
     pBackup_reg->Suspend_AFE_SIDETONE_DEBUG =       Afe_Get_Reg(AFE_SIDETONE_DEBUG);
     pBackup_reg->Suspend_AFE_SIDETONE_MON =         Afe_Get_Reg(AFE_SIDETONE_MON);
     pBackup_reg->Suspend_AFE_SIDETONE_CON0 =        Afe_Get_Reg(AFE_SIDETONE_CON0);
@@ -1187,9 +1196,9 @@ static void AudDrv_Store_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
 
     pBackup_reg->Suspend_AFE_PREDIS_CON0 =           Afe_Get_Reg(AFE_PREDIS_CON0);
     pBackup_reg->Suspend_AFE_PREDIS_CON1 =           Afe_Get_Reg(AFE_PREDIS_CON1);
-    //pBackup_reg->Suspend_AFE_MRG_MON0=              Afe_Get_Reg(AFE_MRG_MON0); 
-    //pBackup_reg->Suspend_AFE_MRG_MON1=              Afe_Get_Reg(AFE_MRG_MON1); 
-    //pBackup_reg->Suspend_AFE_MRG_MON2=              Afe_Get_Reg(AFE_MRG_MON2); 
+    //pBackup_reg->Suspend_AFE_MRG_MON0=              Afe_Get_Reg(AFE_MRG_MON0);
+    //pBackup_reg->Suspend_AFE_MRG_MON1=              Afe_Get_Reg(AFE_MRG_MON1);
+    //pBackup_reg->Suspend_AFE_MRG_MON2=              Afe_Get_Reg(AFE_MRG_MON2);
 
     pBackup_reg->Suspend_AFE_MOD_PCM_BASE =          Afe_Get_Reg(AFE_MOD_PCM_BASE);
     pBackup_reg->Suspend_AFE_MOD_PCM_END =           Afe_Get_Reg(AFE_MOD_PCM_END);
@@ -1200,12 +1209,12 @@ static void AudDrv_Store_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
     pBackup_reg->Suspend_AFE_IRQ_MCU_CNT1 =          Afe_Get_Reg(AFE_IRQ_CNT1);
     pBackup_reg->Suspend_AFE_IRQ_MCU_CNT2 =          Afe_Get_Reg(AFE_IRQ_CNT2);
     pBackup_reg->Suspend_AFE_IRQ_MCU_MON2 =          Afe_Get_Reg(AFE_IRQ_MON2);
-    //pBackup_reg->Suspend_AFE_IRQ_MCU_CNT5=          Afe_Get_Reg(AFE_IRQ_CNT5); 
+    //pBackup_reg->Suspend_AFE_IRQ_MCU_CNT5=          Afe_Get_Reg(AFE_IRQ_CNT5);
     pBackup_reg->Suspend_AFE_IRQ1_MCN_CNT_MON =      Afe_Get_Reg(AFE_IRQ1_CNT_MON);
     pBackup_reg->Suspend_AFE_IRQ2_MCN_CNT_MON =      Afe_Get_Reg(AFE_IRQ2_CNT_MON);
     pBackup_reg->Suspend_AFE_IRQ1_MCU_EN_CNT_MON;
     Afe_Get_Reg(AFE_IRQ1_EN_CNT_MON);
-    //pBackup_reg->Suspend_AFE_IRQ5_MCU_EN_CNT_MON;   Afe_Get_Reg(AFE_IRQ5_MCU_EN_CNT_MON); 
+    //pBackup_reg->Suspend_AFE_IRQ5_MCU_EN_CNT_MON;   Afe_Get_Reg(AFE_IRQ5_MCU_EN_CNT_MON);
     pBackup_reg->Suspend_AFE_MEMIF_MINLEN =          Afe_Get_Reg(AFE_MEMIF_MINLEN);
     pBackup_reg->Suspend_AFE_MEMIF_MAXLEN =          Afe_Get_Reg(AFE_MEMIF_MAXLEN);
     pBackup_reg->Suspend_AFE_MEMIF_PBUF_SIZE =       Afe_Get_Reg(AFE_MEMIF_PBUF_SIZE);
@@ -1247,7 +1256,7 @@ static void AudDrv_Store_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
     pBackup_reg->Suspend_PCM2_INTF_CON =              Afe_Get_Reg(PCM2_INTF_CON);
 
     //spend_reg.Suspend_FOC_ROM_SIG=               Afe_Get_Reg(FOC_ROM_SIG);
-    // 
+    //
     pBackup_reg->Suspend_AUDIO_TOP_CON1 =               Afe_Get_Reg(AUDIO_TOP_CON1);
     pBackup_reg->Suspend_AUDIO_TOP_CON2 =               Afe_Get_Reg(AUDIO_TOP_CON2);
     pBackup_reg->Suspend_AFE_I2S_CON3 =               Afe_Get_Reg(AFE_I2S_CON3);
@@ -1384,7 +1393,7 @@ static void AudDrv_Recover_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
     Afe_Set_Reg(AFE_DAC_CON0,            pBackup_reg->Suspend_AFE_DAC_CON0,           MASK_ALL);
     Afe_Set_Reg(AFE_DAC_CON1,            pBackup_reg->Suspend_AFE_DAC_CON1,           MASK_ALL);
     Afe_Set_Reg(AFE_I2S_CON,             pBackup_reg->Suspend_AFE_I2S_CON,            MASK_ALL);
-    //Afe_Set_Reg(AFE_DAIBT_CON0,          pBackup_reg->Suspend_AFE_DAIBT_CON0,         MASK_ALL); 
+    //Afe_Set_Reg(AFE_DAIBT_CON0,          pBackup_reg->Suspend_AFE_DAIBT_CON0,         MASK_ALL);
 
     Afe_Set_Reg(AFE_CONN0,               pBackup_reg->Suspend_AFE_CONN0,              MASK_ALL);
     Afe_Set_Reg(AFE_CONN1,               pBackup_reg->Suspend_AFE_CONN1,              MASK_ALL);
@@ -1394,7 +1403,7 @@ static void AudDrv_Recover_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
 
     Afe_Set_Reg(AFE_I2S_CON1,            pBackup_reg->Suspend_AFE_I2S_CON1,           MASK_ALL);
     Afe_Set_Reg(AFE_I2S_CON2,            pBackup_reg->Suspend_AFE_I2S_CON2,           MASK_ALL);
-    //Afe_Set_Reg(AFE_MRGIF_CON,           pBackup_reg->Suspend_AFE_MRGIF_CON,          MASK_ALL); 
+    //Afe_Set_Reg(AFE_MRGIF_CON,           pBackup_reg->Suspend_AFE_MRGIF_CON,          MASK_ALL);
 
     Afe_Set_Reg(AFE_DL1_BASE,            pBackup_reg->Suspend_AFE_DL1_BASE,           MASK_ALL);
     Afe_Set_Reg(AFE_DL1_CUR,             pBackup_reg->Suspend_AFE_DL1_CUR,            MASK_ALL);
@@ -1408,25 +1417,25 @@ static void AudDrv_Recover_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
     Afe_Set_Reg(AFE_VUL_BASE,            pBackup_reg->Suspend_AFE_VUL_BASE,           MASK_ALL);
     Afe_Set_Reg(AFE_VUL_CUR,             pBackup_reg->Suspend_AFE_VUL_CUR,            MASK_ALL);
     Afe_Set_Reg(AFE_VUL_END,             pBackup_reg->Suspend_AFE_VUL_END,            MASK_ALL);
-    //Afe_Set_Reg(AFE_DAI_BASE,            pBackup_reg->Suspend_AFE_DAI_BASE,           MASK_ALL); 
-    //Afe_Set_Reg(AFE_DAI_CUR,             pBackup_reg->Suspend_AFE_DAI_CUR,            MASK_ALL); 
-    //Afe_Set_Reg(AFE_DAI_END,             pBackup_reg->Suspend_AFE_DAI_END,            MASK_ALL); 
+    //Afe_Set_Reg(AFE_DAI_BASE,            pBackup_reg->Suspend_AFE_DAI_BASE,           MASK_ALL);
+    //Afe_Set_Reg(AFE_DAI_CUR,             pBackup_reg->Suspend_AFE_DAI_CUR,            MASK_ALL);
+    //Afe_Set_Reg(AFE_DAI_END,             pBackup_reg->Suspend_AFE_DAI_END,            MASK_ALL);
 
-    //Afe_Set_Reg(AFE_IRQ_CON,             pBackup_reg->Suspend_AFE_IRQ_CON,            MASK_ALL); 
+    //Afe_Set_Reg(AFE_IRQ_CON,             pBackup_reg->Suspend_AFE_IRQ_CON,            MASK_ALL);
     Afe_Set_Reg(AFE_MEMIF_MON0,          pBackup_reg->Suspend_AFE_MEMIF_MON0,         MASK_ALL);
     Afe_Set_Reg(AFE_MEMIF_MON1,          pBackup_reg->Suspend_AFE_MEMIF_MON1,         MASK_ALL);
     Afe_Set_Reg(AFE_MEMIF_MON2,          pBackup_reg->Suspend_AFE_MEMIF_MON2,         MASK_ALL);
-    //Afe_Set_Reg(AFE_MEMIF_MON3,          pBackup_reg->Suspend_AFE_MEMIF_MON3,         MASK_ALL); 
+    //Afe_Set_Reg(AFE_MEMIF_MON3,          pBackup_reg->Suspend_AFE_MEMIF_MON3,         MASK_ALL);
     Afe_Set_Reg(AFE_MEMIF_MON4,          pBackup_reg->Suspend_AFE_MEMIF_MON4,         MASK_ALL);
 
-    //Afe_Set_Reg(AFE_FOC_CON,             pBackup_reg->Suspend_AFE_FOC_CON,            MASK_ALL); 
-    //Afe_Set_Reg(AFE_FOC_CON1,            pBackup_reg->Suspend_AFE_FOC_CON1,           MASK_ALL); 
-    //Afe_Set_Reg(AFE_FOC_CON2,            pBackup_reg->Suspend_AFE_FOC_CON2,           MASK_ALL); 
-    //Afe_Set_Reg(AFE_FOC_CON3,            pBackup_reg->Suspend_AFE_FOC_CON3,           MASK_ALL); 
-    //Afe_Set_Reg(AFE_FOC_CON4,            pBackup_reg->Suspend_AFE_FOC_CON4,           MASK_ALL); 
-    //Afe_Set_Reg(AFE_FOC_CON5,            pBackup_reg->Suspend_AFE_FOC_CON5,           MASK_ALL); 
+    //Afe_Set_Reg(AFE_FOC_CON,             pBackup_reg->Suspend_AFE_FOC_CON,            MASK_ALL);
+    //Afe_Set_Reg(AFE_FOC_CON1,            pBackup_reg->Suspend_AFE_FOC_CON1,           MASK_ALL);
+    //Afe_Set_Reg(AFE_FOC_CON2,            pBackup_reg->Suspend_AFE_FOC_CON2,           MASK_ALL);
+    //Afe_Set_Reg(AFE_FOC_CON3,            pBackup_reg->Suspend_AFE_FOC_CON3,           MASK_ALL);
+    //Afe_Set_Reg(AFE_FOC_CON4,            pBackup_reg->Suspend_AFE_FOC_CON4,           MASK_ALL);
+    //Afe_Set_Reg(AFE_FOC_CON5,            pBackup_reg->Suspend_AFE_FOC_CON5,           MASK_ALL);
 
-    //Afe_Set_Reg(AFE_MON_STEP,            pBackup_reg->Suspend_AFE_MON_STEP,           MASK_ALL); 
+    //Afe_Set_Reg(AFE_MON_STEP,            pBackup_reg->Suspend_AFE_MON_STEP,           MASK_ALL);
     Afe_Set_Reg(AFE_SIDETONE_DEBUG,     pBackup_reg->Suspend_AFE_SIDETONE_DEBUG,    MASK_ALL);
     Afe_Set_Reg(AFE_SIDETONE_MON,      pBackup_reg->Suspend_AFE_SIDETONE_MON,     MASK_ALL);
     Afe_Set_Reg(AFE_SIDETONE_CON0,      pBackup_reg->Suspend_AFE_SIDETONE_CON0,     MASK_ALL);
@@ -1437,9 +1446,9 @@ static void AudDrv_Recover_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
 
     Afe_Set_Reg(AFE_PREDIS_CON0,         pBackup_reg->Suspend_AFE_PREDIS_CON0,        MASK_ALL);
     Afe_Set_Reg(AFE_PREDIS_CON1,         pBackup_reg->Suspend_AFE_PREDIS_CON1,        MASK_ALL);
-    //Afe_Set_Reg(AFE_MRG_MON0,            pBackup_reg->Suspend_AFE_MRG_MON0,           MASK_ALL); 
-    //Afe_Set_Reg(AFE_MRG_MON1,            pBackup_reg->Suspend_AFE_MRG_MON1,           MASK_ALL); 
-    //Afe_Set_Reg(AFE_MRG_MON2,            pBackup_reg->Suspend_AFE_MRG_MON2,           MASK_ALL); 
+    //Afe_Set_Reg(AFE_MRG_MON0,            pBackup_reg->Suspend_AFE_MRG_MON0,           MASK_ALL);
+    //Afe_Set_Reg(AFE_MRG_MON1,            pBackup_reg->Suspend_AFE_MRG_MON1,           MASK_ALL);
+    //Afe_Set_Reg(AFE_MRG_MON2,            pBackup_reg->Suspend_AFE_MRG_MON2,           MASK_ALL);
 
     Afe_Set_Reg(AFE_MOD_PCM_BASE,        pBackup_reg->Suspend_AFE_MOD_PCM_BASE,       MASK_ALL);
     Afe_Set_Reg(AFE_MOD_PCM_END,         pBackup_reg->Suspend_AFE_MOD_PCM_END,        MASK_ALL);
@@ -1450,11 +1459,11 @@ static void AudDrv_Recover_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
     Afe_Set_Reg(AFE_IRQ_CNT1,        pBackup_reg->Suspend_AFE_IRQ_MCU_CNT1,       MASK_ALL);
     Afe_Set_Reg(AFE_IRQ_CNT2,        pBackup_reg->Suspend_AFE_IRQ_MCU_CNT2,       MASK_ALL);
     Afe_Set_Reg(AFE_IRQ_MON2,        pBackup_reg->Suspend_AFE_IRQ_MCU_MON2,       MASK_ALL);
-    //Afe_Set_Reg(AFE_IRQ_CNT5,        pBackup_reg->Suspend_AFE_IRQ_MCU_CNT5,       MASK_ALL); 
+    //Afe_Set_Reg(AFE_IRQ_CNT5,        pBackup_reg->Suspend_AFE_IRQ_MCU_CNT5,       MASK_ALL);
     Afe_Set_Reg(AFE_IRQ1_CNT_MON,    pBackup_reg->Suspend_AFE_IRQ1_MCN_CNT_MON,   MASK_ALL);
     Afe_Set_Reg(AFE_IRQ2_CNT_MON,    pBackup_reg->Suspend_AFE_IRQ2_MCN_CNT_MON,   MASK_ALL);
     Afe_Set_Reg(AFE_IRQ1_EN_CNT_MON, pBackup_reg->Suspend_AFE_IRQ1_MCU_EN_CNT_MON, MASK_ALL);
-    //Afe_Set_Reg(AFE_IRQ5_MCU_EN_CNT_MON, pBackup_reg->Suspend_AFE_IRQ5_MCU_EN_CNT_MON, MASK_ALL); 
+    //Afe_Set_Reg(AFE_IRQ5_MCU_EN_CNT_MON, pBackup_reg->Suspend_AFE_IRQ5_MCU_EN_CNT_MON, MASK_ALL);
     Afe_Set_Reg(AFE_MEMIF_MINLEN,        pBackup_reg->Suspend_AFE_MEMIF_MINLEN,       MASK_ALL);
     Afe_Set_Reg(AFE_MEMIF_MAXLEN,        pBackup_reg->Suspend_AFE_MEMIF_MAXLEN,       MASK_ALL);
     Afe_Set_Reg(AFE_MEMIF_PBUF_SIZE,     pBackup_reg->Suspend_AFE_MEMIF_PBUF_SIZE,    MASK_ALL);
@@ -1487,7 +1496,7 @@ static void AudDrv_Recover_reg_AFE(AudAfe_Suspend_Reg *pBackup_reg)
     Afe_Set_Reg(PCM2_INTF_CON,           pBackup_reg->Suspend_PCM2_INTF_CON,          MASK_ALL);
     //e_Set_Reg(FOC_ROM_SIG,             pBackup_reg->Suspend_FOC_ROM_SIG,            MASK_ALL);
 
-    // 
+    //
     Afe_Set_Reg(AUDIO_TOP_CON1,           pBackup_reg->Suspend_AUDIO_TOP_CON1,          MASK_ALL);
     Afe_Set_Reg(AUDIO_TOP_CON2,           pBackup_reg->Suspend_AUDIO_TOP_CON2,          MASK_ALL);
     Afe_Set_Reg(AFE_I2S_CON3,           pBackup_reg->Suspend_AFE_I2S_CON3,          MASK_ALL);
@@ -1758,7 +1767,7 @@ int AudDrv_Force_Free_Buffer(int mem_type)
             VUL_Control_context.MemIfNum = MEM_VUL ;
             break;
         }
-#if 0 //   don't support DAI 
+#if 0 //   don't support DAI
         case MEM_DAI:
         {
             pAFE_MEM = &DAI_Control_context;
@@ -1831,11 +1840,11 @@ int AudDrv_Allocate_DL1_Buffer(struct file *fp, kal_uint32 Afe_Buf_Length)
 #else
         pblock->pucVirtBufAddr = AFE_INTERNAL_SRAM_VIR_BASE;
 #endif
-        Afe_Set_Reg(AFE_MEMIF_MAXLEN, 0, 0x01); // 
+        Afe_Set_Reg(AFE_MEMIF_MAXLEN, 0, 0x01); //
 #else
         PRINTK_AUDDRV("AudDrv_Allocate_DL1_Buffer use dram");
         pblock->pucVirtBufAddr = dma_alloc_coherent(0, pblock->u4BufferSize, &pblock->pucPhysBufAddr, GFP_KERNEL);
-        Afe_Set_Reg(AFE_MEMIF_MAXLEN, 1, 0x01); // 
+        Afe_Set_Reg(AFE_MEMIF_MAXLEN, 1, 0x01); //
 #endif
     }
     PRINTK_AUDDRV("AudDrv_Allocate_DL1_Buffer pucVirtBufAddr = %p\n", pblock->pucVirtBufAddr);
@@ -1918,7 +1927,7 @@ int AudDrv_Allocate_Buffer(struct file *fp, kal_uint32 Afe_Buf_Length , int mem_
             pAFE_MEM = &VUL_Control_context;
             break;
         }
-#if 0//  don't support DAI     
+#if 0//  don't support DAI
         case MEM_DAI:
         {
             pAFE_MEM = &DAI_Control_context;
@@ -1973,7 +1982,7 @@ int AudDrv_Allocate_Buffer(struct file *fp, kal_uint32 Afe_Buf_Length , int mem_
 #else
             Afe_Set_Reg(AFE_DL1_BASE , pblock->pucPhysBufAddr , 0xffffffff);
             Afe_Set_Reg(AFE_DL1_END  , pblock->pucPhysBufAddr + (Afe_Buf_Length - 1) , 0xffffffff);
-            Afe_Set_Reg(AFE_MEMIF_MAXLEN, 0x1, 0xf);    
+            Afe_Set_Reg(AFE_MEMIF_MAXLEN, 0x1, 0xf);
             break;
 #endif
 
@@ -1997,7 +2006,7 @@ int AudDrv_Allocate_Buffer(struct file *fp, kal_uint32 Afe_Buf_Length , int mem_
             Afe_Set_Reg(AFE_VUL_END  , pblock->pucPhysBufAddr + (Afe_Buf_Length - 1) , 0xffffffff);
             break;
         }
-#if 0 // 
+#if 0 //
         case MEM_DAI:
         {
             Afe_Set_Reg(AFE_DAI_BASE , pblock->pucPhysBufAddr , 0xffffffff);
@@ -2035,7 +2044,7 @@ int AudDrv_Free_Buffer(struct file *fp, int mem_type)
             pblock =  &(pAFE_MEM->rBlock);
             if (Aud_Int_Mem_Flag & (1 << MEM_DL1) == 0) // Not use SRAM as memory
             {
-                Auddrv_Free_Dma_Memory(pAFE_MEM);
+            Auddrv_Free_Dma_Memory(pAFE_MEM);
             }
             memset((void *)&AFE_dL1_Control_context, 0, sizeof(AFE_MEM_CONTROL_T));
             AFE_dL1_Control_context.MemIfNum = MEM_DL1 ;
@@ -2079,7 +2088,7 @@ int AudDrv_Free_Buffer(struct file *fp, int mem_type)
             VUL_Control_context.MemIfNum = MEM_VUL ;
             break;
         }
-#if 0//  don't support DAI     
+#if 0//  don't support DAI
         case MEM_DAI:
         {
             pAFE_MEM = &DAI_Control_context;
@@ -2194,7 +2203,7 @@ AFE_MEM_CONTROL_T *Auddrv_Get_MemIF_Context(int MEM_Type)
             return &AWB_Control_context;
         case MEM_VUL:
             return &VUL_Control_context;
-#if 0 //  don't support DAI            
+#if 0 //  don't support DAI
         case MEM_DAI:
             return &DAI_Control_context;
 #endif
@@ -2225,7 +2234,7 @@ AFE_MEM_CONTROL_T *Auddrv_Find_MemIF_Fp(struct file *fp)
     {
         return &VUL_Control_context;
     }
-#if 0 //  don't support DAI        
+#if 0 //  don't support DAI
     else if (DAI_Control_context.flip == fp)
     {
         return &DAI_Control_context;
@@ -2251,7 +2260,7 @@ bool Auddrv_CheckRead_MemIF_Fp(int MEM_Type)
             return false;
         case MEM_AWB:
         case MEM_VUL:
-#if 0 //  don't support DAI            
+#if 0 //  don't support DAI
         case MEM_DAI:
 #endif
         case MEM_MOD_DAI:
@@ -2510,7 +2519,7 @@ void Auddrv_Release_MemIF_Fp(struct file *fp, unsigned long arg)
         if (Aud_Ext_Mem_Flag == 0) //No memory type using EMI, then enable dpidle of AFE bit.
         {
             enable_dpidle_by_bit(MT_CG_AUDIO_AFE);
-            enable_mcidle_by_bit(MT_CG_AUDIO_AFE);    
+            enable_mcidle_by_bit(MT_CG_AUDIO_AFE);
         }
     }
     spin_unlock(&auddrv_lock);
@@ -2709,7 +2718,7 @@ int AudDrv_GET_UL_REMAIN_TIME(struct file *fp)
             samplerate = (samplerate >> 16) & 0x0000000f;
             samplerate = AudDrv_SampleRateIndexConvert(samplerate);
             break;
-#if 0//            
+#if 0//
         case MEM_DAI:
             HW_Cur_ReadIdx = Afe_Get_Reg(AFE_DAI_CUR);
             samplerate = (samplerate >> 20) & 0x00000001;
@@ -2752,7 +2761,7 @@ int AudDrv_GET_UL_REMAIN_TIME(struct file *fp)
     }
 
     spin_lock_irqsave(&auddrv_irqstatus_lock, flags);
-    spin_lock_irqsave(&auddrv_ULInCtl_lock, flagsUL);    
+    spin_lock_irqsave(&auddrv_ULInCtl_lock, flagsUL);
     // HW already fill in
     Hw_Get_bytes = (HW_Cur_ReadIdx - Afe_Block->pucPhysBufAddr) - Afe_Block->u4WriteIdx;
     if (Hw_Get_bytes < 0)
@@ -2777,6 +2786,19 @@ int AudDrv_GET_UL_REMAIN_TIME(struct file *fp)
 
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  AudDrv_AUDIO_REMAINING
+ *
+ * DESCRIPTION
+ *  Get DL buffer remaining size and time stamp
+ *
+ ******************************************************************************/
+void AudDrv_AUDIO_REMAINING(struct file *fp, Data_Remaining *time)
+{
+    do_posix_clock_monotonic_gettime(&(time->time));
+    time->bytes_remaining = AudDrv_GET_DL1_REMAIN_TIME(fp);
+}
 
 /*****************************************************************************
  * FILE OPERATION FUNCTION
@@ -2827,7 +2849,7 @@ static long AudDrv_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
         }
         case AUDDRV_GPIO_IOCTL:
         {
-#if 0   //Debug only , Won't run @ run time     
+#if 0   //Debug only , Won't run @ run time
             mt_set_gpio_mode(GPIO136, GPIO_MODE_00);
             mt_set_gpio_dir(GPIO136, GPIO_DIR_OUT); //output
             mt_set_gpio_out(GPIO136, arg ? GPIO_OUT_ONE : GPIO_OUT_ZERO);
@@ -2867,7 +2889,7 @@ static long AudDrv_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
         case ALLOCATE_MEMIF_DL1:
         {
             AudDrv_Clk_On();
-            //spin_lock(&auddrv_lock);  user space provide protection, Allocation may sleep, and then preemptive
+            //spin_lock(&auddrv_lock);    user space provide protection, Allocation may sleep, and then preemptive
 #if !defined(MTK_AUDIO_DYNAMIC_SRAM_SUPPORT)
             ret = AudDrv_Allocate_DL1_Buffer(fp, arg);
 #else
@@ -2880,7 +2902,7 @@ static long AudDrv_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
         case FREE_MEMIF_DL1:
         {
             AudDrv_Clk_On();
-            //spin_lock(&auddrv_lock);  user space provide protection, Allocation may sleep, and then preemptive
+            //spin_lock(&auddrv_lock);    user space provide protection, Allocation may sleep, and then preemptive
 #if !defined(MTK_AUDIO_DYNAMIC_SRAM_SUPPORT)
             ret = AudDrv_Free_DL1_Buffer(fp);
 #else
@@ -2932,7 +2954,7 @@ static long AudDrv_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
             AudDrv_Clk_Off();
             break;
         }
-#if 0 //  don't support DAI        
+#if 0 //  don't support DAI
         case ALLOCATE_MEMIF_DAI:
         {
             AudDrv_Clk_On();
@@ -2970,13 +2992,15 @@ static long AudDrv_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
                 MEM_DAI == MEM_Type || MEM_MOD_DAI == MEM_Type)
             {
                 disable_dpidle_by_bit(MT_CG_AUDIO_AFE);
-                disable_mcidle_by_bit(MT_CG_AUDIO_AFE);    
+                disable_mcidle_by_bit(MT_CG_AUDIO_AFE);
                 //PRINTK_AUDDRV("%s disable_dpidle_by_bit\n",__FUNCTION__);
             }
 #endif
+            AudDrv_Clk_On();
             Auddrv_Set_MemIF_Fp(fp, arg);
             Auddrv_Add_MemIF_Counter(arg);
             CheckPowerState();
+            AudDrv_Clk_Off();
             break;
         }
         case STANDBY_MEMIF_TYPE:
@@ -2987,14 +3011,16 @@ static long AudDrv_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
                 MEM_DAI == MEM_Type || MEM_MOD_DAI == MEM_Type)
             {
                 enable_dpidle_by_bit(MT_CG_AUDIO_AFE);
-                enable_mcidle_by_bit(MT_CG_AUDIO_AFE);    
+                enable_mcidle_by_bit(MT_CG_AUDIO_AFE);
                 //PRINTK_AUDDRV("%s enable_dpidle_by_bit\n",__FUNCTION__);
             }
 #endif
+            AudDrv_Clk_On();
             Auddrv_Check_Irq();
             Auddrv_Release_MemIF_Fp(fp, arg);
             Auddrv_Release_MemIF_Counter(arg);
             ClearInterruptTiming();
+            AudDrv_Clk_Off();
             break;
         }
         case AUD_RESTART:
@@ -3421,6 +3447,17 @@ static long AudDrv_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
             ret = AudDrv_GET_UL_REMAIN_TIME(fp);
             break;
         }
+        case AUDDRV_AUDIO_REMAINING:
+        {
+            Data_Remaining data;
+            AudDrv_AUDIO_REMAINING(fp, &data);
+            if (copy_to_user((void __user *)(arg), (void *)(&data), sizeof(Data_Remaining)))
+            {
+                return -EFAULT;
+            }
+
+            break;
+        }
         default:
         {
             PRINTK_AUD_ERROR("AudDrv Fail IOCTL command no such ioctl cmd = %x \n", cmd);
@@ -3456,13 +3493,13 @@ static ssize_t AudDrv_write(struct file *fp, const char __user *data, size_t cou
     int written_size = count , ret = 0, copy_size = 0, Afe_WriteIdx_tmp;
     unsigned long flags;
     char *data_w_ptr = (char *)data;
-    unsigned long long tin,tout;
+    //unsigned long long tin,tout;
     //PRINTK_AUDDRV("+AudDrv_writeAudDrv_write = %p count = %d\n",fp ,count);
 
     // check which memif nned to be write
     pAfe_MEM_ConTrol = Auddrv_Find_MemIF_Fp(fp);
     Afe_Block = &(pAfe_MEM_ConTrol->rBlock);
-    tin = sched_clock();
+    //tin = sched_clock();
     if ((pAfe_MEM_ConTrol == NULL) || (Afe_Block == NULL))
     {
         PRINTK_AUDDRV("AudDrv_writeAudDrv_write g fbut find no MEM control block");
@@ -3640,17 +3677,17 @@ static ssize_t AudDrv_write(struct file *fp, const char __user *data, size_t cou
                 spin_lock_irqsave(&auddrv_irqstatus_lock, flags);
                 AudIrqReset = true;
                 spin_unlock_irqrestore(&auddrv_irqstatus_lock, flags);
-                PRINTK_AUDDRV("AudDrv_write B %d %llu %d",written_size,tout,DL1_Interrupt_Interval);    
+                PRINTK_AUDDRV("AudDrv_write B %d %d",written_size,DL1_Interrupt_Interval);
                 return written_size;
             }
         }
         // here need to wait for interrupt handler
     }
     //PRINTK_AUDDRV("AudDrv_write written_size = %d\n",written_size);
-    tout = sched_clock();
-    tout = tout - tin;
+    //tout = sched_clock();
+    //tout = tout - tin;
     //PRINTK_AUDDRV("AudDrv_write A %d %llu %d",written_size,tout,DL1_Interrupt_Interval);
-    //PRINTK_AUDDRV("AWD %d",written_size);
+   // PRINTK_AUDDRV("AWD %d",written_size);
     return written_size;
 }
 
@@ -3799,7 +3836,7 @@ ssize_t AudDrv_MEMIF_Read(struct file *fp,  char __user *data, size_t count, lof
                 PRINTK_AUDDRV("AudDrv_MEMIF_Read E2, read_size:%x, DataRemained:%x, DMA_Read_Ptr:0x%x, DMAReadIdx:%x pucVirtBufAddr : %x \r\n",
                               read_size, Afe_Block->u4DataRemained, DMA_Read_Ptr, Afe_Block->u4DMAReadIdx,Afe_Block->pucVirtBufAddr);
             }
-             
+
             if (copy_to_user((void __user *)Read_Data_Ptr, (Afe_Block->pucVirtBufAddr + DMA_Read_Ptr), size_1))
             {
                 /*
@@ -3840,7 +3877,7 @@ ssize_t AudDrv_MEMIF_Read(struct file *fp,  char __user *data, size_t count, lof
                 PRINTK_AUDDRV("AudDrv_MEMIF_Read E3, read_size:%x, DataRemained:%x, DMA_Read_Ptr:0x%x, DMAReadIdx:%x pucVirtBufAddr : %x \r\n",
                               read_size, Afe_Block->u4DataRemained, DMA_Read_Ptr, Afe_Block->u4DMAReadIdx,Afe_Block->pucVirtBufAddr);
             }
-            
+
             if (copy_to_user((void __user *)(Read_Data_Ptr + size_1), (Afe_Block->pucVirtBufAddr + DMA_Read_Ptr), size_2))
             {
                 /*
@@ -3883,7 +3920,7 @@ ssize_t AudDrv_MEMIF_Read(struct file *fp,  char __user *data, size_t count, lof
                     ret = wait_event_interruptible_timeout(VUL_Wait_Queue, VUL_wait_queue_flag, AFE_UL_TIMEOUT);
                     break;
                 }
-#if 0 //  don't support DAI               
+#if 0 //  don't support DAI
                 case MEM_DAI:
                 {
                     DAI_wait_queue_flag = 0;
@@ -4027,7 +4064,7 @@ static int AudDrv_remap_mmap(struct file *flip, struct vm_area_struct *vma)
     vma->vm_ops = &AudDrv_remap_vm_ops;
     AudDrv_vma_open(vma);
     */
-    return 0;
+    return -1;
 }
 
 /*****************************************************************************

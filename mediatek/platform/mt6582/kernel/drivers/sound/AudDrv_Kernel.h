@@ -1,3 +1,17 @@
+/*
+* Copyright (C) 2011-2014 MediaTek Inc.
+*
+* This program is free software: you can redistribute it and/or modify it under the terms of the
+* GNU General Public License version 2 as published by the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+* See the GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along with this program.
+* If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef AUDDRV_KERNEL_H
 #define AUDDRV_KERNEL_H
 
@@ -264,7 +278,7 @@ AFE_MEM_CONTROL_T    AFE_dL1_Control_context;
 AFE_MEM_CONTROL_T    AFE_dL2_Control_context;
 AFE_MEM_CONTROL_T    AWB_Control_context;
 AFE_MEM_CONTROL_T    VUL_Control_context;
-#if 0 // don't support DAI    
+#if 0 // don't support DAI
 AFE_MEM_CONTROL_T     DAI_Control_context;
 #endif
 AFE_MEM_CONTROL_T     MODDAI_Control_context;

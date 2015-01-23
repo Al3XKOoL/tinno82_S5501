@@ -1,3 +1,17 @@
+/*
+* Copyright (C) 2011-2014 MediaTek Inc.
+*
+* This program is free software: you can redistribute it and/or modify it under the terms of the
+* GNU General Public License version 2 as published by the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+* See the GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along with this program.
+* If not, see <http://www.gnu.org/licenses/>.
+*/
+
 /*******************************************************************************
  *
  * Filename:
@@ -32,6 +46,7 @@
 #ifndef _AUDDRV_IOCTL_MSG_H
 #define _AUDDRV_IOCTL_MSG_H
 
+#include <linux/time.h>
 
 /*****************************************************************************
 *                     C O M P I L E R   F L A G S
@@ -53,7 +68,8 @@
 #define GET_ANAAFE_REG         _IOWR(AUD_DRV_IOC_MAGIC, 0x03, Register_Control*)
 #define AUDDRV_GET_DL1_REMAINDATA_TIME  _IOWR(AUD_DRV_IOC_MAGIC, 0x0A, int)
 #define AUDDRV_GET_UL_REMAINDATA_TIME   _IOWR(AUD_DRV_IOC_MAGIC, 0x0B, int)
-
+// used audio get time stamp
+#define AUDDRV_AUDIO_REMAINING    _IOWR(AUD_DRV_IOC_MAGIC, 0x0C, struct Data_Remaining*)
 
 // Allocate mean allocate buffer and set stream into ready state.
 #define ALLOCATE_MEMIF_DL1           _IOWR(AUD_DRV_IOC_MAGIC, 0x10,unsigned int)
@@ -169,6 +185,12 @@ typedef struct
     int bVT;
     int bAudioPlay;
 } SPH_Control;
+
+typedef struct       // TimeStamp
+{
+    int bytes_remaining;
+    struct timespec time;
+} Data_Remaining;
 
 /*****************************************************************************
 *                        F U N C T I O N   D E F I N I T I O N
