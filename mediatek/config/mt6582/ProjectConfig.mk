@@ -109,10 +109,10 @@ MTK_BT_PROFILE_AVRCP14= no
 MTK_BT_PROFILE_SIMAP=no
 
 # When this option set to yes, the Bluetooth Low Energy "Proximity Profile - Monitor Role" (PRXM) will be enabled.
-MTK_BT_PROFILE_PRXM=no
+MTK_BT_PROFILE_PRXM=yes
 
 # When this option set to yes, the Bluetooth Low Energy "Proximity Profile - Reporter Role" (PRXR) will be enabled.
-MTK_BT_PROFILE_PRXR=no
+MTK_BT_PROFILE_PRXR=yes
 
 # When this option set to yes, the Bluetooth "File Transfer Profile" (FTP) will be enabled.
 MTK_BT_PROFILE_FTP=no

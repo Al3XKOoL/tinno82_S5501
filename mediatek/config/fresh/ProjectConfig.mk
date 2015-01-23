@@ -498,10 +498,10 @@ MTK_BT_PROFILE_SIMAP=yes
 MTK_BT_PROFILE_SPP=no
 
 # When this option set to yes, the Bluetooth Low Energy "Time Profile - Client Role" (TIMEC) will be enabled.
-MTK_BT_PROFILE_TIMEC=no
+MTK_BT_PROFILE_TIMEC=yes
 
 # When this option set to yes, the Bluetooth Low Energy "Time Profile - Server Role" (TIMES) will be enabled.
-MTK_BT_PROFILE_TIMES=no
+MTK_BT_PROFILE_TIMES=yes
 
 # When this option set to yes, the MTK Bluetooth solution will be included.
 MTK_BT_SUPPORT=yes
