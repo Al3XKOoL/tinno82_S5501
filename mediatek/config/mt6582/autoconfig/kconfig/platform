@@ -866,8 +866,17 @@ CONFIG_HAVE_BPF_JIT=y
 
 # Kernel Net Logging
 #
-CONFIG_MTK_NET_LOGGING=y
+# CONFIG_MTK_NET_LOGGING is not set
 #
+
+# Kernel memory debugging
+#
+# CONFIG_SLUB_DEBUG is not set
+# CONFIG_SLUB_DEBUG_ON is not set
+# CONFIG_DEBUG_RODATA is not set
+# CONFIG_DEBUG_RODATA_TEST is not set
+# CONFIG_DEBUG_PAGEALLOC is not set
+
 
 #
 # Network testing
