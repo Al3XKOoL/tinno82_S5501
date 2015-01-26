@@ -36,8 +36,8 @@ CONFIG_IRQ_WORK=y
 #
 CONFIG_EXPERIMENTAL=y
 CONFIG_INIT_ENV_ARG_LIMIT=32
-CONFIG_CROSS_COMPILE="toolchain/arm-cortex_a7-linux-gnueabi/bin/arm-cortex_a7-linux-gnueabi-"
-CONFIG_LOCALVERSION="-WR-V2"
+CONFIG_CROSS_COMPILE="toolchain/arm-cortex_a7-linux-gnueabihf-linaro_4.9/bin/arm-cortex_a7-linux-gnueabihf-"
+CONFIG_LOCALVERSION="-WR-V2.1"
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_HAVE_KERNEL_GZIP=y
 CONFIG_HAVE_KERNEL_LZMA=y
