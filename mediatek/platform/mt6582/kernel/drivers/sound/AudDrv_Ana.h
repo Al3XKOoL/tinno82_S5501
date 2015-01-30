@@ -1,16 +1,18 @@
 /*
-* Copyright (C) 2011-2014 MediaTek Inc.
-*
-* This program is free software: you can redistribute it and/or modify it under the terms of the
-* GNU General Public License version 2 as published by the Free Software Foundation.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with this program.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (C) 2007 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*******************************************************************************
  *
  * Filename:
@@ -142,7 +144,6 @@
 //---------------analog pmic  register define start --------------------------------------
 #if 0
 #define AFE_PMICANA_AUDIO_BASE        (0x0)
-
 #define CID                  (AFE_PMICANA_AUDIO_BASE + 0x100)
 #define TOP_CKPDN0                  (AFE_PMICANA_AUDIO_BASE + 0x102)
 #define TOP_CKPDN0_SET              (AFE_PMICANA_AUDIO_BASE + 0x104)
@@ -154,7 +155,6 @@
 #define TOP_CKPDN2_SET              (AFE_PMICANA_AUDIO_BASE + 0x110)
 #define TOP_CKPDN2_CLR              (AFE_PMICANA_AUDIO_BASE + 0x112)
 #define TOP_CKCON1                  (AFE_PMICANA_AUDIO_BASE + 0x126)
-
 #define SPK_CON0                    (AFE_PMICANA_AUDIO_BASE + 0x052)
 #define SPK_CON1                    (AFE_PMICANA_AUDIO_BASE + 0x054)
 #define SPK_CON2                    (AFE_PMICANA_AUDIO_BASE + 0x056)
@@ -165,7 +165,6 @@
 #define SPK_CON10                   (AFE_PMICANA_AUDIO_BASE + 0x066)
 #define SPK_CON11                   (AFE_PMICANA_AUDIO_BASE + 0x068)
 #define SPK_CON12                   (AFE_PMICANA_AUDIO_BASE + 0x06A)
-
 #define AUDTOP_CON0                 (AFE_PMICANA_AUDIO_BASE + 0x700)
 #define AUDTOP_CON1                 (AFE_PMICANA_AUDIO_BASE + 0x702)
 #define AUDTOP_CON2                 (AFE_PMICANA_AUDIO_BASE + 0x704)
