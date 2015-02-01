@@ -141,7 +141,7 @@ obj-y   +=  accdet/
 obj-y   +=  vibrator/
 obj-y	+=	pwm/
 obj-y   +=  freqhopping/
-obj-$(CONFIG_MTK_ETM) += etm/
+#obj-$(CONFIG_MTK_ETM) += etm/
 obj-y   +=      dbg_dump/
 obj-y	+=	misc_via/
 endif#!CONFIG_MTK_FPGA
