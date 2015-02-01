@@ -30,13 +30,13 @@ static struct freq_attr _attr_##_name = {\
 	.show = _show,\
 };
 
-#define CPU_FREQ_LEVEL_NUMBER 34
+#define CPU_FREQ_LEVEL_NUMBER	34
 
 static cputime64_t cpu0_time_in_state[CPU_FREQ_LEVEL_NUMBER] = {0};
 static unsigned int cpu0_total_trans = 0;
 static cputime64_t cpu1_time_in_state[CPU_FREQ_LEVEL_NUMBER] = {0};
 static unsigned int cpu1_total_trans = 0;
-ifdef CONFIG_QUAD_CORES_SOC_STAT
+#ifdef CONFIG_QUAD_CORES_SOC_STAT
 static cputime64_t cpu2_time_in_state[CPU_FREQ_LEVEL_NUMBER] = {0};
 static unsigned int cpu2_total_trans = 0;
 static cputime64_t cpu3_time_in_state[CPU_FREQ_LEVEL_NUMBER] = {0};
@@ -72,7 +72,7 @@ static int cpufreq_stats_update(unsigned int cpu)
 	cur_time = get_jiffies_64();
 	spin_lock(&cpufreq_stats_lock);
 	stat = per_cpu(cpufreq_stats_table, cpu);
-		if (!stat) {
+	if (!stat) {
 		spin_unlock(&cpufreq_stats_lock);
 		return 0;
 	}
@@ -83,21 +83,21 @@ static int cpufreq_stats_update(unsigned int cpu)
 
 	if (cpu == 0)
 		cpu0_time_in_state[stat->last_index] =
-			cputime64_add(cpu0_time_in_state[stat->last_index],
-			cputime_sub(cur_time, stat->last_time));
+			cpu0_time_in_state[stat->last_index] +
+			(cur_time - stat->last_time);
 	else if (cpu == 1)
 		cpu1_time_in_state[stat->last_index] =
-			cputime64_add(cpu1_time_in_state[stat->last_index],
-			cputime_sub(cur_time, stat->last_time));
+			cpu1_time_in_state[stat->last_index] +
+			(cur_time - stat->last_time);
 #ifdef CONFIG_QUAD_CORES_SOC_STAT
 	else if (cpu == 2)
 		cpu2_time_in_state[stat->last_index] =
-			cputime64_add(cpu2_time_in_state[stat->last_index],
-			cputime_sub(cur_time, stat->last_time));
+			cpu2_time_in_state[stat->last_index] +
+			(cur_time - stat->last_time);
 	else if (cpu == 3)
 		cpu3_time_in_state[stat->last_index] =
-			cputime64_add(cpu3_time_in_state[stat->last_index],
-			cputime_sub(cur_time, stat->last_time));
+			cpu3_time_in_state[stat->last_index] +
+			(cur_time - stat->last_time);
 #endif
 	stat->last_time = cur_time;
 	spin_unlock(&cpufreq_stats_lock);
@@ -114,7 +114,7 @@ static ssize_t show_total_trans(struct cpufreq_policy *policy, char *buf)
 }
 
 static ssize_t show_overall_total_trans(struct kobject *kobj,
-+						struct attribute *attr, char *buf)
+						struct attribute *attr, char *buf)
 {
 #ifndef CONFIG_QUAD_CORES_SOC_STAT
         return sprintf(buf, "%d\n%d\n", cpu0_total_trans,
@@ -144,7 +144,7 @@ static ssize_t show_time_in_state(struct cpufreq_policy *policy, char *buf)
 }
 
 static ssize_t show_overall_time_in_state(struct kobject *kobj,
-+						struct attribute *attr, char *buf)
+						struct attribute *attr, char *buf)
 {
 	ssize_t len = 0;
 	int i;
