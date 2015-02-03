@@ -209,7 +209,7 @@ static void dwc3_ep0_stall_and_restart(struct dwc3 *dwc)
 	struct dwc3_ep		*dep = dwc->eps[0];
 
 	/* stall is always issued on EP0 */
-	__dwc3_gadget_ep_set_halt(dep, 1);
+	__dwc3_gadget_ep_set_halt(dep, 1, false);
 	dep->flags = DWC3_EP_ENABLED;
 	dwc->delayed_status = false;
 
