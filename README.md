@@ -1,4 +1,4 @@
-Wiko Rainbow & Explay Fresh 
+Wiko Rainbow Custom Kernel [3.4.106] 
 ===========================
 
 kernel:
@@ -6,6 +6,9 @@ kernel:
 cd tinno82_S5501
 ./mk -o=TARGET_BUILD_VARIANT=user n k
 
+Or verbose
+
+./mk -t -o=TARGET_BUILD_VARIANT=user n k
+
 Then, to create the boot.img:
 ./pack_bootimage.sh
-
