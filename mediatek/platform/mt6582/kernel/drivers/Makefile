@@ -45,7 +45,7 @@ obj-y   += videocodec/
 #
 #obj-y   += jpeg/
 #obj-y   += gdma/
-obj-y   += masp/
+#obj-y   += masp/
 #endif
 #
 obj-y   += accdet/
