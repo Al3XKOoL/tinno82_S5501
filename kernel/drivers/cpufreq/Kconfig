@@ -323,6 +323,14 @@ config CPU_FREQ_GOV_SMARTASS2
 config CPU_FREQ_GOV_INTERACTIVEX
         tristate "'interactiveX' cpufreq policy governor"
 
+config CPU_FREQ_GOV_SAVAGEDZEN
+	tristate "'savagedzen' cpufreq governor"
+	depends on CPU_FREQ
+	help
+	  'Savaged-Zen' - a "smartass" based governor
+
+	  If in doubt, say N.
+
 config CPU_FREQ_GOV_PEGASUSQ
         tristate "'pegasusq' cpufreq policy governor"
 
