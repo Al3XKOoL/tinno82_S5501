@@ -1,8 +1,8 @@
 #!/bin/bash
 
+PRJ=wiko
 
 # make boot.img
-PRJ=wiko
  echo "		==> [WORKING] build boot.img in process..."
  echo ""
  echo ""
@@ -37,7 +37,7 @@ PRJ=wiko
 # Make flashable zip
  cp out/target/product/${PRJ}/boot.img mediatek/host/zip
  cd mediatek/host/zip
- zip -r WR-Kernel.zip ./*
+ zip -r -0 WR-Kernel.zip ./*
  mv WR-Kernel.zip ../../../build_results
  rm ../../../mediatek/host/zip/boot.img
  echo "		==> [OK]   Find all filen into build_results folder!"
