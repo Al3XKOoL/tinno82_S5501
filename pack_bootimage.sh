@@ -8,5 +8,9 @@ PRJ=wiko
  mv out/target/product/${PRJ}/ramdisk.img mediatek/kernel/trace32/${PRJ}_ramdisk.img
  mv out/target/product/${PRJ}/ramdisk_android.img out/target/product/${PRJ}/ramdisk.img
  mediatek/build/tools/images/mkbootimg  --kernel out/target/product/${PRJ}/kernel --ramdisk out/target/product/${PRJ}/ramdisk.img --board 1336460062 --output out/target/product/${PRJ}/boot.img
+ mkdir -p build_results
+ cp out/target/product/${PRJ}/boot.img build_results
+ cp out/target/product/${PRJ}/kernel build_results
+ mv build_results/kernel build_results/zImage
  echo "		==> [OK]   All done!"
 
