@@ -61,8 +61,8 @@ config HIBERNATION
 	bool "Hibernation (aka 'suspend to disk')"
 	depends on SWAP && ARCH_HIBERNATION_POSSIBLE
 	select HIBERNATE_CALLBACKS
-	select LZO_COMPRESS
-	select LZO_DECOMPRESS
+	select LZ4_COMPRESS
+	select LZ4_DECOMPRESS
 	select CRC32
 	---help---
 	  Enable the suspend to disk (STD) functionality, which is usually
